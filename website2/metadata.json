@@ -1,0 +1,5 @@
+{
+  "name": "Chat2Ticket - IBM Orchestrate Hackathon",
+  "description": "A landing page for the Chat2Ticket AI WhatsApp bot, featuring event discovery, Stripe payments, and calendar integrations.",
+  "requestFramePermissions": []
+}

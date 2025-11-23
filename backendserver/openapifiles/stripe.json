@@ -1,0 +1,90 @@
+{
+  "name": "Collect Stripe Payment via WhatsApp (with Success Confirmation)",
+  "description": "PCI-compliant WhatsApp → Stripe Payment Link flow with automatic success confirmation – Nov 2025",
+  "version": "3.2.2",
+  "triggers": [
+    {
+      "type": "manual",
+      "name": "Start from Assistant or WhatsApp"
+    },
+    {
+      "type": "whatsapp_message",
+      "provider": "any",
+      "name": "Incoming WhatsApp message"
+    }
+  ],
+  "endpoints": [
+    {
+      "path": "/stripe-webhook",
+      "method": "POST",
+      "name": "Stripe Webhook Receiver",
+      "description": "Receives checkout.session.completed from Stripe"
+    }
+  ],
+  "steps": [
+    {
+      "name": "Ask for Amount",
+      "type": "conversation",
+      "messages": [
+        {
+          "text": "Hi! 👋 How much would you like to pay today?\n\nJust reply with the amount in USD (e.g. 15.00)"
+        }
+      ]
+    },
+    {
+      "name": "Wait for Amount",
+      "type": "wait_for_reply",
+      "timeout": "15m"
+    },
+    {
+      "name": "Parse Amount",
+      "type": "javascript",
+      "code": "const text = inputs.reply?.body || inputs.message?.body || '';\nconst num = parseFloat(text.replace(/[^0-9.]/g, '')) || 0;\nif (num <= 0) throw new Error('Please send a valid amount');\noutputs.amount_cents = Math.round(num * 100);\noutputs.phone = inputs.trigger?.from || inputs.whatsapp_from;"
+    },
+    {
+      "name": "Create Stripe Payment Link",
+      "type": "http_request",
+      "method": "POST",
+      "url": "https://api.stripe.com/v1/payment_links",
+      "headers": {
+        "Authorization": "Bearer {{credentials.stripe_secret_key}}",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      "body": "line_items[0][price_data][currency]=usd&line_items[0][price_data][unit_amount]={{outputs['Parse Amount'].amount_cents}}&line_items[0][price_data][product_data][name]=Payment via WhatsApp&line_items[0][quantity]=1&metadata[whatsapp]={{outputs['Parse Amount'].phone}}&after_completion[type]=redirect&after_completion[redirect][url]=https://yourdomain.com/thanks"
+    },
+    {
+      "name": "Send Payment Link",
+      "type": "whatsapp_send",
+      "to": "{{outputs['Parse Amount'].phone}}",
+      "message": "Secure payment ready!\n\nClick here → {{outputs['Create Stripe Payment Link'].url}}\n\nI’ll notify you the second it’s complete ✅"
+    },
+    {
+      "name": "Stripe Webhook – Payment Success",
+      "trigger": {
+        "endpoint": "/stripe-webhook",
+        "method": "POST"
+      },
+      "condition": "{{inputs.event.type == 'checkout.session.completed'}}",
+      "steps": [
+        {
+          "name": "Extract Payment Details",
+          "type": "javascript",
+          "code": "const session = inputs.event.data.object;\noutputs.amount = (session.amount_total / 100).toFixed(2);\noutputs.receipt = session.receipt_url || 'Check your email';\noutputs.phone = session.metadata.whatsapp || session.customer_details?.phone || session.customer_details?.email;"
+        },
+        {
+          "name": "Send Success Confirmation",
+          "type": "whatsapp_send",
+          "to": "{{outputs['Extract Payment Details'].phone}}",
+          "message": "Payment received! 🎉\n\nAmount: ${{outputs['Extract Payment Details'].amount}}\nReceipt: {{outputs['Extract Payment Details'].receipt}}\n\nThank you – your order is confirmed and processing!"
+        }
+      ]
+    }
+  ],
+  "credentials": [
+    {
+      "name": "stripe_secret_key",
+      "type": "secret_text",
+      "description": "Stripe Secret Key"
+    }
+  ]
+}
