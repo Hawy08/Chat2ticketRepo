@@ -29,18 +29,14 @@ const VideoDemo: React.FC = () => {
             ></iframe>
         */}
         <div className="relative w-full max-w-5xl mx-auto aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-[0_0_40px_rgba(57,255,20,0.1)] bg-[#111] group">
-            {/* Background Texture */}
-            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1614064641938-3bbee52942c7?q=80&w=2670&auto=format&fit=crop')] bg-center bg-cover opacity-20"></div>
-            
-            {/* Placeholder Overlay */}
-            <div className="absolute inset-0 flex items-center justify-center">
-                 <div className="flex flex-col items-center gap-4">
-                     <div className="w-20 h-20 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/20 group-hover:scale-110 group-hover:bg-neon group-hover:text-black group-hover:border-neon transition-all duration-300 cursor-pointer">
-                        <Play className="w-8 h-8 fill-current" />
-                     </div>
-                     <p className="text-gray-400 font-mono text-sm uppercase tracking-widest">Video Coming Soon</p>
-                 </div>
-            </div>
+            <iframe 
+              className="w-full h-full"
+              src="https://www.youtube.com/embed/-DzfgYoXdZM" 
+              title="Chat2Ticket Demo" 
+              frameBorder="0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+              allowFullScreen
+            ></iframe>
         </div>
       </div>
     </section>
